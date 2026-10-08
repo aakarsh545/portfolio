@@ -281,6 +281,26 @@ function updateScrollEffects() {
 
 const scroller = new SmoothScroller();
 
+function getNavClearance() {
+  const nav = document.querySelector("[data-floating-nav]");
+  const navBar = nav?.querySelector(".floating-nav__bar");
+  if (!nav || !navBar) return 0;
+  const navStyle = getComputedStyle(nav);
+  return parseFloat(navStyle.top) + navBar.getBoundingClientRect().height + (2 * parseFloat(navStyle.paddingTop)) + 16;
+}
+
+function scrollToInitialHash() {
+  if (!window.location.hash) return;
+  let target;
+  try {
+    target = document.querySelector(window.location.hash);
+  } catch {
+    return;
+  }
+  if (!target) return;
+  requestAnimationFrame(() => scroller.scrollTo(target.offsetTop - getNavClearance(), { immediate: true }));
+}
+
 function setupLoader() {
   const loader = document.querySelector("[data-loader]");
   window.scrollTo(0, 0);
@@ -292,6 +312,7 @@ function setupLoader() {
     document.body.classList.remove("is-loading");
     document.body.classList.add("is-hero-ready");
     document.body.classList.add("is-ready");
+    scrollToInitialHash();
     return;
   }
 
@@ -313,6 +334,7 @@ function setupLoader() {
     document.body.classList.remove("is-loading");
     document.body.classList.add("is-ready");
     loader.hidden = true;
+    scrollToInitialHash();
   }, 4500);
 }
 
@@ -379,7 +401,6 @@ function setupNavigation() {
 }
 
 function setupAnchorNavigation() {
-  const nav = document.querySelector("[data-floating-nav]");
   document.querySelectorAll('a[href^="#"]').forEach((link) => {
     link.addEventListener("click", (event) => {
       const hash = link.getAttribute("href");
@@ -391,12 +412,7 @@ function setupAnchorNavigation() {
         target.focus({ preventScroll: true });
         return;
       }
-      const navStyle = nav ? getComputedStyle(nav) : null;
-      const navBar = nav?.querySelector(".floating-nav__bar");
-      const navClearance = navStyle && navBar
-        ? parseFloat(navStyle.top) + navBar.getBoundingClientRect().height + (2 * parseFloat(navStyle.paddingTop)) + 16
-        : 0;
-      scroller.scrollTo(target.offsetTop - navClearance);
+      scroller.scrollTo(target.offsetTop - getNavClearance());
     });
   });
 }
