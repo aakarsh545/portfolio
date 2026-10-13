@@ -49,10 +49,6 @@ body {
   text-rendering: geometricPrecision;
 }
 
-body.is-loading {
-  overflow: hidden;
-}
-
 body::before,
 body::after {
   position: fixed;
@@ -141,134 +137,6 @@ textarea:focus-visible {
   transform: translateY(0);
 }
 
-/* Page-load choreography */
-.loader {
-  position: fixed;
-  z-index: 2400;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  color: #fff;
-  background: #171717;
-  transform: translateY(0);
-}
-
-.loader__panel {
-  position: absolute;
-  inset: 0;
-  background: #171717;
-}
-
-.loader__content {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-}
-
-.loader__avatar {
-  display: grid;
-  width: 4rem;
-  height: 4rem;
-  place-items: center;
-  overflow: hidden;
-  border: 2px solid #fff;
-  border-radius: 50%;
-  color: #171717;
-  background: #ddc18e;
-  font-size: 1.2rem;
-  font-weight: 600;
-}
-
-.loader__avatar {
-  object-fit: cover;
-}
-
-.loader__name {
-  position: relative;
-  margin: 0;
-  font-size: 2.25rem;
-  font-weight: 600;
-  letter-spacing: -0.035em;
-}
-
-.loader__name {
-  color: rgb(255 255 255 / 28%);
-}
-
-.loader__name::after {
-  position: absolute;
-  inset: 0;
-  color: #fff;
-  content: attr(data-text);
-  clip-path: inset(0 100% 0 0);
-}
-
-.loader__progress {
-  position: fixed;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  height: 0.5rem;
-  overflow: hidden;
-  background: rgb(0 0 0 / 45%);
-}
-
-.loader__progress-bar {
-  display: block;
-  width: 100%;
-  height: 100%;
-  background: #fff;
-  transform: scaleX(0);
-  transform-origin: left;
-}
-
-.loader.is-running .loader__progress-bar {
-  animation: loader-progress 3s cubic-bezier(0.76, 0, 0.24, 1) forwards;
-}
-
-.loader.is-running .loader__name::after {
-  animation: loader-name-fill 3s cubic-bezier(0.76, 0, 0.24, 1) forwards;
-}
-
-.loader.is-reversing .loader__progress-bar {
-  animation: loader-reverse 500ms cubic-bezier(0.76, 0, 0.24, 1) forwards;
-  transform-origin: right;
-}
-
-.loader.is-reversing .loader__content {
-  opacity: 0;
-  transition: opacity 500ms ease-out;
-}
-
-.loader.is-exiting {
-  pointer-events: none;
-  transform: translateY(-101%);
-  transition: transform 1s cubic-bezier(0.76, 0, 0.24, 1);
-}
-
-.loader.is-exiting .loader__content {
-  opacity: 0;
-  transform: translateY(-0.75rem);
-  transition: opacity 420ms ease-out, transform 500ms var(--ease-out);
-}
-
-@keyframes loader-progress {
-  to { transform: scaleX(1); }
-}
-
-@keyframes loader-name-fill {
-  to { clip-path: inset(0); }
-}
-
-@keyframes loader-reverse {
-  from { transform: scaleX(1); }
-  to { transform: scaleX(0); }
-}
-
 /* Floating navigation */
 .floating-nav {
   position: fixed;
@@ -290,12 +158,14 @@ textarea:focus-visible {
   backdrop-filter: blur(14px);
   opacity: 0;
   transform: translate(-50%, -6rem);
+  animation: floating-nav-in 480ms var(--ease-out) 60ms both;
 }
 
-body.is-ready .floating-nav {
-  opacity: 1;
-  transform: translate(-50%, 0);
-  transition: opacity 600ms var(--ease-out), transform 600ms var(--ease-out);
+@keyframes floating-nav-in {
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
 }
 
 .floating-nav__bar {
@@ -552,12 +422,14 @@ main {
   gap: 0.75rem;
   opacity: 0;
   transform: translateY(0.65rem);
+  animation: hero-copy-in 560ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-body.is-hero-ready .hero__copy {
-  opacity: 1;
-  transform: translateY(0);
-  transition: opacity 1.8s cubic-bezier(0.16, 1, 0.3, 1), transform 1.8s cubic-bezier(0.16, 1, 0.3, 1);
+@keyframes hero-copy-in {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .availability {
@@ -1883,15 +1755,6 @@ body.is-hero-ready .hero__copy {
 @media (max-width: 768px) {
   :root { --content-width: 85vw; }
 
-  .loader__avatar {
-    width: 3rem;
-    height: 3rem;
-  }
-
-  .loader__name {
-    font-size: 1.5rem;
-  }
-
   body::before,
   body::after {
     width: 90vw;
@@ -2200,7 +2063,4 @@ body.is-hero-ready .hero__copy {
     transform: translate(-50%, 0) !important;
   }
 
-  .loader {
-    display: none;
-  }
 }

@@ -36,11 +36,6 @@ class SmoothScroller {
   onWheel(event) {
     if (reducedMotion.matches || event.ctrlKey || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
     if (event.composedPath().some((node) => node instanceof HTMLElement && node.hasAttribute("data-lenis-prevent"))) return;
-    if (document.body.classList.contains("is-loading")) {
-      event.preventDefault();
-      return;
-    }
-
     const delta = this.normalizeWheel(event);
     const nextTarget = clamp(this.target + delta, 0, this.limit);
     if (nextTarget === this.target && (nextTarget === 0 || nextTarget === this.limit)) return;
@@ -117,6 +112,7 @@ class SmoothScroller {
 let effectsFrame = 0;
 let bridgeLayout = [];
 let mobileCardsUnstacked = false;
+let mobileBridgeTrigger = 130;
 
 const stackStage = document.querySelector("[data-stack-bridge]");
 const stackCards = [...document.querySelectorAll("[data-stack-card]")];
@@ -146,6 +142,7 @@ function measureStackBridge() {
   if (!stackStage || stackCards.length !== workTargets.length) return;
 
   const stage = documentRect(stackStage);
+  mobileBridgeTrigger = stage.top - window.innerHeight * 0.35;
   bridgeLayout = stackCards.map((card, index) => {
     const target = documentRect(workTargets[index]);
     const width = target.width;
@@ -206,10 +203,10 @@ function applyDesktopStackBridge() {
 }
 
 function applyMobileStackBridge(immediate = false) {
-  const triggerPoint = stackStage
-    ? documentRect(stackStage).top - window.innerHeight * 0.35
-    : 130;
-  mobileCardsUnstacked = window.scrollY >= triggerPoint;
+  const shouldUnstack = window.scrollY >= mobileBridgeTrigger;
+  if (!immediate && mobileCardsUnstacked === shouldUnstack) return;
+
+  mobileCardsUnstacked = shouldUnstack;
 
   bridgeLayout.forEach((item) => {
     item.card.style.pointerEvents = mobileCardsUnstacked ? "none" : "auto";
@@ -274,47 +271,18 @@ function updateImageParallax(container) {
 }
 
 function updateScrollEffects() {
-  applyStackBridge();
+  if (!reducedMotion.matches) {
+    if (mobileLayout.matches) {
+      if ((window.scrollY >= mobileBridgeTrigger) !== mobileCardsUnstacked) applyMobileStackBridge();
+    } else {
+      applyDesktopStackBridge();
+    }
+  }
   updateImageParallax(aboutParallax);
   updateImageParallax(contactParallax);
 }
 
 const scroller = new SmoothScroller();
-
-function setupLoader() {
-  const loader = document.querySelector("[data-loader]");
-  window.scrollTo(0, 0);
-  scroller.current = 0;
-  scroller.target = 0;
-
-  if (!loader || reducedMotion.matches) {
-    if (loader) loader.hidden = true;
-    document.body.classList.remove("is-loading");
-    document.body.classList.add("is-hero-ready");
-    document.body.classList.add("is-ready");
-    return;
-  }
-
-  requestAnimationFrame(() => loader.classList.add("is-running"));
-
-  window.setTimeout(() => {
-    loader.classList.add("is-reversing");
-  }, 3000);
-
-  window.setTimeout(() => {
-    loader.classList.add("is-exiting");
-  }, 3500);
-
-  window.setTimeout(() => {
-    document.body.classList.add("is-hero-ready");
-  }, 4000);
-
-  window.setTimeout(() => {
-    document.body.classList.remove("is-loading");
-    document.body.classList.add("is-ready");
-    loader.hidden = true;
-  }, 4500);
-}
 
 function setupNavigation() {
   const nav = document.querySelector("[data-floating-nav]");
@@ -649,7 +617,6 @@ function handleLayoutChange() {
   }, 80);
 }
 
-setupLoader();
 setupNavigation();
 setupAnchorNavigation();
 setupReveals();
