@@ -113,10 +113,13 @@ let effectsFrame = 0;
 let bridgeLayout = [];
 let mobileCardsUnstacked = false;
 let mobileBridgeTrigger = 130;
+let desktopBridgeEndpoint = 1;
+const parallaxLayout = new Map();
 
 const stackStage = document.querySelector("[data-stack-bridge]");
 const stackCards = [...document.querySelectorAll("[data-stack-card]")];
 const workTargets = [...document.querySelectorAll(".work-card__media")];
+const workSection = document.querySelector(".work-section");
 const aboutParallax = document.querySelector(".about-card__portrait");
 const contactParallax = document.querySelector(".contact-card__visual");
 
@@ -138,7 +141,25 @@ function documentRect(element) {
   };
 }
 
+function measureScrollEffects() {
+  if (workSection) {
+    desktopBridgeEndpoint = Math.max(1, workSection.offsetTop + workSection.offsetHeight - window.innerHeight);
+  }
+
+  [aboutParallax, contactParallax].forEach((container) => {
+    if (!container) return;
+    const section = container.closest("section");
+    if (!section) return;
+
+    parallaxLayout.set(container, {
+      start: section.offsetTop - window.innerHeight,
+      distance: (section.offsetHeight + window.innerHeight) * 0.6
+    });
+  });
+}
+
 function measureStackBridge() {
+  measureScrollEffects();
   if (!stackStage || stackCards.length !== workTargets.length) return;
 
   const stage = documentRect(stackStage);
@@ -183,11 +204,7 @@ function setCardTransform(item, x, y, rotation, scale, opacity = 1) {
 }
 
 function applyDesktopStackBridge() {
-  const workSection = document.querySelector(".work-section");
-  if (!workSection) return;
-
-  const endpoint = Math.max(1, workSection.offsetTop + workSection.offsetHeight - window.innerHeight);
-  const progress = clamp(window.scrollY / endpoint, 0, 1);
+  const progress = clamp(window.scrollY / desktopBridgeEndpoint, 0, 1);
   const crossfade = clamp((progress - 0.975) / 0.025, 0, 1);
 
   bridgeLayout.forEach((item) => {
@@ -261,12 +278,10 @@ function updateImageParallax(container) {
     container.style.setProperty("--parallax-scale", "1");
     return;
   }
-  const section = container.closest("section");
-  if (!section) return;
+  const layout = parallaxLayout.get(container);
+  if (!layout) return;
 
-  const start = section.offsetTop - window.innerHeight;
-  const distance = (section.offsetHeight + window.innerHeight) * 0.6;
-  const progress = clamp((window.scrollY - start) / Math.max(1, distance), 0, 1);
+  const progress = clamp((window.scrollY - layout.start) / Math.max(1, layout.distance), 0, 1);
   container.style.setProperty("--parallax-scale", String(mix(1.3, 1, progress)));
 }
 
@@ -449,7 +464,10 @@ function setAccordionOpen(trigger, open, immediate = false) {
       content.style.opacity = "1";
     });
     window.setTimeout(() => {
-      if (trigger.getAttribute("aria-expanded") === "true") content.style.height = "auto";
+      if (trigger.getAttribute("aria-expanded") === "true") {
+        content.style.height = "auto";
+        handleLayoutChange();
+      }
     }, 310);
     return;
   }
@@ -462,7 +480,10 @@ function setAccordionOpen(trigger, open, immediate = false) {
     content.style.opacity = "0";
   });
   window.setTimeout(() => {
-    if (trigger.getAttribute("aria-expanded") === "false") content.hidden = true;
+    if (trigger.getAttribute("aria-expanded") === "false") {
+      content.hidden = true;
+      handleLayoutChange();
+    }
   }, 310);
 }
 
@@ -515,6 +536,7 @@ function setupFaq() {
         window.setTimeout(() => panel.classList.remove("is-entering"), 610);
       }
     });
+    handleLayoutChange();
   };
 
   tabs.forEach((tab, index) => {
